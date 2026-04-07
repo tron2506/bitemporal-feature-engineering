@@ -1,0 +1,42 @@
+1. The Problem Statement
+
+Background:
+You are an ML Engineer at a hospital. You need to build a feature matrix to predict whether a patient will require ICU admission. The model must make its prediction exactly at Tpredict​ (2 hours after the patient's admission).
+
+The Catch:
+The hospital's raw database is an append-only event log. Due to network delays and lab recalibrations, test results are often recorded hours after the blood was drawn. Sometimes, a lab value is retroactively corrected due to machine error.
+
+Your Task:
+Write a Python algorithm (using Pandas, Polars, or PySpark) to process the raw event log and generate a denormalized feature vector for each patient. You must strictly ensure zero data leakage. You can only use data that was physically recorded in the system at or before Tpredict​.
+
+Specific Feature Requirements:
+For each patient, calculate the following features exactly at Tpredict​:
+
+    latest_heart_rate: The most recent heart rate recorded prior to Tpredict​.
+
+    lab_wbc_decayed: An exponentially decayed average of all White Blood Cell (WBC) counts known at Tpredict​. The decay formula is wi​=e−λΔt, where λ=0.1 and Δt is the difference in hours between Tpredict​ and the lab's Valid Time.
+
+    is_lab_corrected: A boolean flag (1 or 0) indicating if any lab value known at Tpredict​ was a retroactive correction of a previous value.
+
+2. The Input Data
+
+Source: Synthetically generated via a hidden Python script (provided in the benchmark suite).
+Format: A JSONL file (hospital_events.jsonl) containing ∼100,000 events.
+
+Schema:
+
+    event_id (UUID)
+
+    patient_id (String)
+
+    event_type (Enum: ADMISSION, HEART_RATE, LAB_WBC)
+
+    valid_time (ISO 8601 Timestamp): When the event actually occurred in the physical world (e.g., when the blood was drawn).
+
+    transaction_time (ISO 8601 Timestamp): When the event was committed to the database.
+
+    value (Float): The measurement.
+
+    supersedes_event_id (UUID or Null): If this is a correction, it references the original event_id it is fixing.
+
+Crucial Edge Case in Data: The synthetic data will specifically inject events where valid_time <Tpredict​, but transaction_time >Tpredict​. It will also contain corrections that arrived after Tpredict​ for labs taken before Tpredict​.
